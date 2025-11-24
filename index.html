@@ -1,0 +1,689 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>AI Media Detector</title>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      body {
+        font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        min-height: 100vh;
+        padding: 20px;
+      }
+
+      .container {
+        max-width: 1200px;
+        margin: 0 auto;
+      }
+
+      header {
+        text-align: center;
+        color: white;
+        margin-bottom: 40px;
+      }
+
+      header h1 {
+        font-size: 2.5rem;
+        margin-bottom: 10px;
+        text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2);
+      }
+
+      header p {
+        font-size: 1.1rem;
+        opacity: 0.9;
+      }
+
+      .main-card {
+        background: white;
+        border-radius: 20px;
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+        padding: 40px;
+        margin-bottom: 30px;
+      }
+
+      .upload-zone {
+        border: 3px dashed #667eea;
+        border-radius: 15px;
+        padding: 60px 20px;
+        text-align: center;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        background: #f8f9ff;
+      }
+
+      .upload-zone:hover {
+        border-color: #764ba2;
+        background: #f0f2ff;
+      }
+
+      .upload-zone.dragging {
+        border-color: #764ba2;
+        background: #e8ebff;
+        transform: scale(1.02);
+      }
+
+      .upload-icon {
+        font-size: 4rem;
+        margin-bottom: 20px;
+      }
+
+      .upload-zone h3 {
+        color: #667eea;
+        margin-bottom: 10px;
+        font-size: 1.5rem;
+      }
+
+      .upload-zone p {
+        color: #666;
+        margin-bottom: 20px;
+      }
+
+      .file-input {
+        display: none;
+      }
+
+      .btn {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border: none;
+        padding: 15px 40px;
+        font-size: 1.1rem;
+        border-radius: 50px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        font-weight: 600;
+        box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+      }
+
+      .btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(102, 126, 234, 0.6);
+      }
+
+      .btn:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+        transform: none;
+      }
+
+      .preview-section {
+        margin-top: 30px;
+        text-align: center;
+      }
+
+      .preview-img,
+      .preview-video {
+        max-width: 100%;
+        max-height: 400px;
+        border-radius: 10px;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+      }
+
+      .file-info {
+        margin-top: 15px;
+        padding: 15px;
+        background: #f8f9ff;
+        border-radius: 10px;
+        text-align: left;
+      }
+
+      .progress-bar {
+        width: 100%;
+        height: 30px;
+        background: #e0e0e0;
+        border-radius: 15px;
+        overflow: hidden;
+        margin: 20px 0;
+        display: none;
+      }
+
+      .progress-fill {
+        height: 100%;
+        background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+        width: 0%;
+        transition: width 0.3s ease;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-weight: 600;
+      }
+
+      .result-section {
+        display: none;
+        margin-top: 30px;
+        padding: 30px;
+        background: #f8f9ff;
+        border-radius: 15px;
+      }
+
+      .result-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 20px;
+        flex-wrap: wrap;
+        gap: 15px;
+      }
+
+      .probability-badge {
+        font-size: 2.5rem;
+        font-weight: bold;
+        padding: 20px 30px;
+        border-radius: 15px;
+        display: inline-block;
+      }
+
+      .status-badge {
+        padding: 10px 25px;
+        border-radius: 25px;
+        font-weight: 600;
+        font-size: 1.2rem;
+      }
+
+      .natural {
+        background: #4caf50;
+        color: white;
+      }
+
+      .suspicious {
+        background: #f44336;
+        color: white;
+      }
+
+      .ai-high {
+        background: #ffebee;
+        color: #c62828;
+      }
+
+      .ai-low {
+        background: #e8f5e9;
+        color: #2e7d32;
+      }
+
+      .exif-table {
+        width: 100%;
+        margin-top: 20px;
+        border-collapse: collapse;
+      }
+
+      .exif-table th,
+      .exif-table td {
+        padding: 12px;
+        text-align: left;
+        border-bottom: 1px solid #ddd;
+      }
+
+      .exif-table th {
+        background: #667eea;
+        color: white;
+        font-weight: 600;
+      }
+
+      .exif-table tr:hover {
+        background: #f5f5f5;
+      }
+
+      .chart-container {
+        margin-top: 30px;
+        background: white;
+        padding: 20px;
+        border-radius: 10px;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+      }
+
+      canvas {
+        max-width: 100%;
+      }
+
+      .error-message {
+        background: #ffebee;
+        color: #c62828;
+        padding: 15px;
+        border-radius: 10px;
+        margin-top: 20px;
+        display: none;
+      }
+
+      @media (max-width: 768px) {
+        header h1 {
+          font-size: 2rem;
+        }
+
+        .main-card {
+          padding: 20px;
+        }
+
+        .upload-zone {
+          padding: 40px 15px;
+        }
+
+        .result-header {
+          flex-direction: column;
+          text-align: center;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <header>
+        <h1>🤖 AI Media Detector</h1>
+        <p>Detecte se suas imagens ou vídeos foram gerados por IA</p>
+      </header>
+
+      <div class="main-card">
+        <div class="upload-zone" id="uploadZone">
+          <div class="upload-icon">📁</div>
+          <h3>Arraste e solte seu arquivo aqui</h3>
+          <p>ou clique para selecionar</p>
+          <p style="font-size: 0.9rem; color: #999">
+            Imagens: JPG, PNG, JPEG, WEBP | Vídeos: MP4, MOV, AVI, WEBM
+          </p>
+          <input
+            type="file"
+            id="fileInput"
+            class="file-input"
+            accept="image/jpeg,image/png,image/jpg,image/webp,video/mp4,video/mov,video/avi,video/webm"
+          />
+        </div>
+
+        <div class="preview-section" id="previewSection"></div>
+
+        <div class="progress-bar" id="progressBar">
+          <div class="progress-fill" id="progressFill">0%</div>
+        </div>
+
+        <div style="text-align: center; margin-top: 30px">
+          <button class="btn" id="analyzeBtn" disabled>Analisar Arquivo</button>
+        </div>
+
+        <div class="error-message" id="errorMessage"></div>
+
+        <div class="result-section" id="resultSection"></div>
+      </div>
+    </div>
+
+    <script>
+      const API_URL = "http://localhost:8000";
+      let selectedFile = null;
+      let fileType = null;
+
+      const uploadZone = document.getElementById("uploadZone");
+      const fileInput = document.getElementById("fileInput");
+      const previewSection = document.getElementById("previewSection");
+      const analyzeBtn = document.getElementById("analyzeBtn");
+      const progressBar = document.getElementById("progressBar");
+      const progressFill = document.getElementById("progressFill");
+      const resultSection = document.getElementById("resultSection");
+      const errorMessage = document.getElementById("errorMessage");
+
+      // Upload zone click
+      uploadZone.addEventListener("click", () => fileInput.click());
+
+      // Drag and drop
+      uploadZone.addEventListener("dragover", (e) => {
+        e.preventDefault();
+        uploadZone.classList.add("dragging");
+      });
+
+      uploadZone.addEventListener("dragleave", () => {
+        uploadZone.classList.remove("dragging");
+      });
+
+      uploadZone.addEventListener("drop", (e) => {
+        e.preventDefault();
+        uploadZone.classList.remove("dragging");
+        const file = e.dataTransfer.files[0];
+        handleFile(file);
+      });
+
+      // File input change
+      fileInput.addEventListener("change", (e) => {
+        const file = e.target.files[0];
+        handleFile(file);
+      });
+
+      function handleFile(file) {
+        if (!file) return;
+
+        selectedFile = file;
+        const fileName = file.name.toLowerCase();
+
+        if (fileName.match(/\.(jpg|jpeg|png|webp)$/)) {
+          fileType = "image";
+          previewImage(file);
+        } else if (fileName.match(/\.(mp4|mov|avi|webm)$/)) {
+          fileType = "video";
+          previewVideo(file);
+        } else {
+          showError("Formato de arquivo não suportado");
+          return;
+        }
+
+        analyzeBtn.disabled = false;
+        resultSection.style.display = "none";
+        errorMessage.style.display = "none";
+      }
+
+      function previewImage(file) {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          previewSection.innerHTML = `
+                    <img src="${
+                      e.target.result
+                    }" class="preview-img" alt="Preview">
+                    <div class="file-info">
+                        <strong>📄 Arquivo:</strong> ${file.name}<br>
+                        <strong>📊 Tamanho:</strong> ${(
+                          file.size /
+                          1024 /
+                          1024
+                        ).toFixed(2)} MB<br>
+                        <strong>🖼️ Tipo:</strong> Imagem
+                    </div>
+                `;
+        };
+        reader.readAsDataURL(file);
+      }
+
+      function previewVideo(file) {
+        const url = URL.createObjectURL(file);
+        previewSection.innerHTML = `
+                <video src="${url}" class="preview-video" controls></video>
+                <div class="file-info">
+                    <strong>📄 Arquivo:</strong> ${file.name}<br>
+                    <strong>📊 Tamanho:</strong> ${(
+                      file.size /
+                      1024 /
+                      1024
+                    ).toFixed(2)} MB<br>
+                    <strong>🎬 Tipo:</strong> Vídeo
+                </div>
+            `;
+      }
+
+      analyzeBtn.addEventListener("click", async () => {
+        if (!selectedFile) return;
+
+        analyzeBtn.disabled = true;
+        progressBar.style.display = "block";
+        resultSection.style.display = "none";
+        errorMessage.style.display = "none";
+
+        const formData = new FormData();
+        formData.append("file", selectedFile);
+
+        const endpoint =
+          fileType === "image" ? "/detect/image" : "/detect/video";
+
+        try {
+          simulateProgress();
+
+          const response = await fetch(API_URL + endpoint, {
+            method: "POST",
+            body: formData,
+          });
+
+          if (!response.ok) throw new Error("Erro na análise");
+
+          const data = await response.json();
+          progressFill.style.width = "100%";
+          progressFill.textContent = "100%";
+
+          setTimeout(() => {
+            displayResults(data);
+            progressBar.style.display = "none";
+            progressFill.style.width = "0%";
+          }, 500);
+        } catch (error) {
+          showError("Erro ao analisar arquivo: " + error.message);
+          progressBar.style.display = "none";
+        } finally {
+          analyzeBtn.disabled = false;
+        }
+      });
+
+      function simulateProgress() {
+        let progress = 0;
+        const interval = setInterval(() => {
+          progress += Math.random() * 30;
+          if (progress > 90) {
+            clearInterval(interval);
+            progress = 90;
+          }
+          progressFill.style.width = progress + "%";
+          progressFill.textContent = Math.floor(progress) + "%";
+        }, 500);
+      }
+
+      function displayResults(data) {
+        resultSection.style.display = "block";
+
+        if (data.type === "image") {
+          displayImageResults(data);
+        } else {
+          displayVideoResults(data);
+        }
+      }
+
+      function displayImageResults(data) {
+        const aiProb =
+          typeof data.ai_probability === "object"
+            ? data.ai_probability.ai_probability
+            : data.ai_probability;
+        const probability = (aiProb * 100).toFixed(1);
+        const isAI = aiProb > 0.5;
+        const predicted =
+          data.ai_probability.predicted || (isAI ? "AI" : "REAL");
+        const isSuspicious = data.metadata_suspicious;
+
+        let html = `
+                <div class="result-header">
+                    <div>
+                        <h2>Resultados da Análise</h2>
+                        <p style="color: #666;">Imagem analisada com sucesso</p>
+                    </div>
+                    <div>
+                        <div class="probability-badge ${
+                          isAI ? "ai-high" : "ai-low"
+                        }">
+                            ${probability}% IA
+                        </div>
+                    </div>
+                </div>
+
+                <div style="margin: 20px 0;">
+                    <span class="status-badge ${
+                      predicted === "REAL" ? "natural" : "suspicious"
+                    }">
+                        ${predicted === "REAL" ? "✓ REAL" : "⚠️ IA DETECTADA"}
+                    </span>
+                    ${
+                      isSuspicious
+                        ? '<span class="status-badge suspicious" style="margin-left: 10px;">⚠️ Metadados Suspeitos</span>'
+                        : ""
+                    }
+                </div>
+
+                <div style="margin-top: 20px; padding: 20px; background: white; border-radius: 10px;">
+                    <h3 style="color: #667eea; margin-bottom: 15px;">🎯 Probabilidades</h3>
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px;">
+                        <div style="padding: 15px; background: #ffebee; border-radius: 8px;">
+                            <div style="font-size: 0.9rem; color: #666; margin-bottom: 5px;">IA Gerada</div>
+                            <div style="font-size: 1.8rem; font-weight: bold; color: #c62828;">${probability}%</div>
+                        </div>
+                        <div style="padding: 15px; background: #e8f5e9; border-radius: 8px;">
+                            <div style="font-size: 0.9rem; color: #666; margin-bottom: 5px;">Real/Natural</div>
+                            <div style="font-size: 1.8rem; font-weight: bold; color: #2e7d32;">${(
+                              100 - parseFloat(probability)
+                            ).toFixed(1)}%</div>
+                        </div>
+                    </div>
+                </div>
+
+                <h3 style="margin-top: 30px; color: #667eea;">📋 Metadados EXIF</h3>
+            `;
+
+        if (data.exif) {
+          const exifData = data.exif;
+
+          if (exifData.suspicious) {
+            html += `<div style="background: #fff3cd; padding: 15px; border-radius: 8px; margin: 15px 0; border-left: 4px solid #ffc107;">
+                        <strong style="color: #856404;">⚠️ Alerta:</strong> ${
+                          exifData.reason || "Metadados suspeitos detectados"
+                        }
+                    </div>`;
+          }
+
+          if (exifData.tags && Object.keys(exifData.tags).length > 0) {
+            html +=
+              '<table class="exif-table"><thead><tr><th>Campo</th><th>Valor</th></tr></thead><tbody>';
+            for (const [key, value] of Object.entries(exifData.tags)) {
+              html += `<tr><td><strong>${key}</strong></td><td>${value}</td></tr>`;
+            }
+            html += "</tbody></table>";
+          } else {
+            html +=
+              '<p style="color: #999; margin-top: 15px;">Nenhum metadado EXIF encontrado na imagem</p>';
+          }
+        } else {
+          html +=
+            '<p style="color: #999; margin-top: 15px;">Nenhum metadado EXIF disponível</p>';
+        }
+
+        resultSection.innerHTML = html;
+      }
+
+      function displayVideoResults(data) {
+        const probability = (data.ai_probability * 100).toFixed(1);
+        const isAI = data.ai_probability > 0.5;
+
+        let html = `
+                <div class="result-header">
+                    <div>
+                        <h2>Resultados da Análise</h2>
+                        <p style="color: #666;">${
+                          data.frames_analyzed
+                        } frames analisados</p>
+                    </div>
+                    <div>
+                        <div class="probability-badge ${
+                          isAI ? "ai-high" : "ai-low"
+                        }">
+                            ${probability}% IA
+                        </div>
+                    </div>
+                </div>
+
+                <div style="margin: 20px 0;">
+                    <span class="status-badge ${
+                      isAI ? "suspicious" : "natural"
+                    }">
+                        ${isAI ? "⚠️ SUSPEITO - Provável IA" : "✓ NATURAL"}
+                    </span>
+                </div>
+
+                <h3 style="margin-top: 30px; color: #667eea;">📊 Análise por Frame</h3>
+                <div class="chart-container">
+                    <canvas id="frameChart"></canvas>
+                </div>
+            `;
+
+        resultSection.innerHTML = html;
+
+        // Draw chart
+        drawFrameChart(data.ai_probability_by_frame);
+      }
+
+      function drawFrameChart(probabilities) {
+        const canvas = document.getElementById("frameChart");
+        const ctx = canvas.getContext("2d");
+
+        canvas.width = canvas.offsetWidth;
+        canvas.height = 300;
+
+        const padding = 40;
+        const width = canvas.width - padding * 2;
+        const height = canvas.height - padding * 2;
+
+        // Clear canvas
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        // Draw axes
+        ctx.strokeStyle = "#333";
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(padding, padding);
+        ctx.lineTo(padding, canvas.height - padding);
+        ctx.lineTo(canvas.width - padding, canvas.height - padding);
+        ctx.stroke();
+
+        // Draw grid
+        ctx.strokeStyle = "#e0e0e0";
+        ctx.lineWidth = 1;
+        for (let i = 0; i <= 10; i++) {
+          const y = padding + (height / 10) * i;
+          ctx.beginPath();
+          ctx.moveTo(padding, y);
+          ctx.lineTo(canvas.width - padding, y);
+          ctx.stroke();
+        }
+
+        // Draw line
+        ctx.strokeStyle = "#667eea";
+        ctx.lineWidth = 3;
+        ctx.beginPath();
+
+        probabilities.forEach((prob, i) => {
+          const x = padding + (width / (probabilities.length - 1)) * i;
+          const y = canvas.height - padding - prob * height;
+
+          if (i === 0) {
+            ctx.moveTo(x, y);
+          } else {
+            ctx.lineTo(x, y);
+          }
+        });
+
+        ctx.stroke();
+
+        // Draw points
+        probabilities.forEach((prob, i) => {
+          const x = padding + (width / (probabilities.length - 1)) * i;
+          const y = canvas.height - padding - prob * height;
+
+          ctx.fillStyle = prob > 0.5 ? "#f44336" : "#4caf50";
+          ctx.beginPath();
+          ctx.arc(x, y, 5, 0, Math.PI * 2);
+          ctx.fill();
+        });
+
+        // Labels
+        ctx.fillStyle = "#333";
+        ctx.font = "12px Arial";
+        ctx.textAlign = "right";
+        ctx.fillText("100%", padding - 5, padding);
+        ctx.fillText("0%", padding - 5, canvas.height - padding);
+
+        ctx.textAlign = "center";
+        ctx.fillText("Frame", canvas.width / 2, canvas.height - 10);
+      }
+
+      function showError(message) {
+        errorMessage.textContent = message;
+        errorMessage.style.display = "block";
+        setTimeout(() => {
+          errorMessage.style.display = "none";
+        }, 5000);
+      }
+    </script>
+  </body>
+</html>

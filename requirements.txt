@@ -1,0 +1,10 @@
+fastapi
+uvicorn
+python-multipart
+opencv-python
+Pillow
+torch
+torchvision
+exifread
+ffmpeg-python
+numpy
