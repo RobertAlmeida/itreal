@@ -34,7 +34,6 @@ env/
 *.pt
 *.onnx
 *.ckpt
-models/
 checkpoints/
 weights/
 
