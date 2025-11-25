@@ -36,6 +36,7 @@ env/
 *.ckpt
 checkpoints/
 weights/
+models/
 
 # --------------------------------------------------
 # DATASETS / INPUTS

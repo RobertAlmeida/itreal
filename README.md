@@ -1,167 +1,194 @@
-🧠 ItsReal – Detector de Conteúdo Gerado por IA
+# AI Media Detector API
 
-Detecte se imagens ou vídeos foram criados por modelos de Inteligência Artificial usando redes neurais treinadas.
-API construída em FastAPI, com backend em Python + PyTorch.
+API FastAPI para detecção de imagens e vídeos gerados por Inteligência Artificial usando Deep Learning.
 
-🚀 Funcionalidades
+## 📋 Sobre
 
-🔎 Detecção IA vs Real para imagens
+Este projeto utiliza um modelo baseado em EfficientNet-B0 para classificar imagens e vídeos como **gerados por IA** ou **reais**. A API também analisa metadados EXIF para identificar possíveis manipulações.
 
-🎥 Análise de vídeos com extração de frames
+## 🚀 Funcionalidades
 
-🧬 Modelo EfficientNet-B0 treinado
+- **Detecção em Imagens**: Analisa imagens individuais e retorna probabilidade de ser IA
+- **Detecção em Vídeos**: Processa frames de vídeos para análise
+- **Análise de Metadados**: Verifica EXIF para detectar ausência ou inconsistências
+- **CORS Habilitado**: Pronto para integração com front-end
+- **Interface Web**: Página HTML incluída para testes
 
-📝 Verificação de metadados EXIF
+## 📁 Estrutura do Projeto
 
-🔥 API FastAPI pronta para produção
+```
+app/
+├── models/
+│   ├── detector.py           # Modelo de Deep Learning
+│   └── ai_detector_model.pth # Pesos treinados (você precisa adicionar)
+├── schemas/
+├── services/
+│   ├── image_analyzer.py     # Análise de imagens
+│   └── video_analyzer.py     # Análise de vídeos
+└── utils/
+    ├── exif_utils.py         # Utilitários para metadados
+    └── frame_utils.py        # Extração de frames
 
-⚡ Suporte a GPU (CUDA) quando disponível
+main.py                       # Aplicação FastAPI
+index.html                    # Interface web
+```
 
-🛡 Tratamento seguro de arquivos corrompidos
+## 🔧 Instalação
 
-🗂 Estrutura do Projeto
-itsreal/
-│── app/
-│   ├── main.py
-│   ├── routes/
-│   │   └── analyzer_routes.py
-│   ├── services/
-│   │   ├── image_analyzer.py
-│   │   └── video_analyzer.py
-│   ├── utils/
-│   │   ├── exif_utils.py
-│   │   └── frame_utils.py
-│   ├── models/
-│   │   ├── detector.py
-│   │   └── ai_detector_model.pth  (IGNORADO NO GIT)
-│── dataset/  (IGNORADO)
-│── venv/     (IGNORADO)
-│── .gitignore
-│── README.md
+### Pré-requisitos
 
-🔧 Instalação
-1️⃣ Clonar o repositório
-git clone https://github.com/seuusuario/itsreal.git
-cd itsreal
+- Python 3.8+
+- pip
 
-2️⃣ Criar ambiente virtual
-python3 -m venv venv
-source venv/bin/activate  # Linux/Mac
+### Passos
 
-3️⃣ Instalar dependências
-pip install -r requirements.txt
+1. **Clone o repositório**
+```bash
+git clone https://github.com/RobertAlmeida/ai-media-detector.git
+cd ai-media-detector
+```
 
-🤖 Treinando o Modelo
+2. **Instale as dependências**
+```bash
+pip install fastapi uvicorn python-multipart pillow torch torchvision
+```
 
-Coloque seu dataset no diretório:
+3. **Adicione o modelo treinado**
 
-dataset/
-│── IA/
-│── REAL/
+Coloque o arquivo `ai_detector_model.pth` dentro da pasta `app/models/`:
+```
+app/models/ai_detector_model.pth
+```
 
+4. **Execute a API**
+```bash
+uvicorn main:app --reload
+```
 
-Execute o script de treino:
+A API estará disponível em: `http://localhost:8000`
 
-python train.py
+## 📡 Endpoints
 
+### `GET /`
+Verifica status da API
 
-O modelo treinado será salvo automaticamente como:
+**Resposta:**
+```json
+{
+  "status": "AI Detector API running"
+}
+```
 
-ai_detector_model.pth
+### `POST /detect/image`
+Analisa uma imagem
 
+**Parâmetros:**
+- `file` (multipart/form-data): Arquivo de imagem
 
-🔥 Importante: Arquivo ignorado no Git.
-
-🧩 Rodando a API
-
-Inicie o serviço FastAPI com Uvicorn:
-
-uvicorn app.main:app --reload
-
-
-A API estará disponível em:
-
-👉 http://127.0.0.1:8000
-
-👉 Documentação Swagger: http://127.0.0.1:8000/docs
-
-📤 Endpoints
-▶️ POST /analyze/image
-
-Envia uma imagem para análise:
-
-curl -X POST http://127.0.0.1:8000/analyze/image \
-  -F "file=@foto.jpg"
-
-
-Retorno:
-
+**Resposta:**
+```json
 {
   "type": "image",
   "ai_probability": {
-    "ai_probability": 0.91,
-    "real_probability": 0.09,
+    "ai_probability": 0.8410249352455139,
+    "real_probability": 0.15897512435913086,
     "predicted": "IA"
   },
   "metadata_suspicious": true,
-  "exif": {}
+  "exif": {
+    "suspicious": true,
+    "reason": "EXIF missing",
+    "tags": {}
+  }
 }
+```
 
-▶️ POST /analyze/video
-curl -X POST http://127.0.0.1:8000/analyze/video \
-  -F "file=@video.mp4"
+### `POST /detect/video`
+Analisa um vídeo
 
+**Parâmetros:**
+- `file` (multipart/form-data): Arquivo de vídeo
 
-Retorno:
+**Resposta:** Estrutura similar à detecção de imagem
 
-{
-  "type": "video",
-  "frames_analyzed": 32,
-  "ai_probability": 0.73,
-  "ai_probability_by_frame": [...]
-}
+## 🖥️ Interface Web
 
-🛡 Segurança & Tratamento de Erros
+Abra o arquivo `index.html` no navegador para usar a interface visual. Certifique-se de que a API está rodando antes de fazer uploads.
 
-Vídeos corrompidos → Erro claro
+## 🧠 Modelo
 
-Fotos ilegíveis → Resposta com código 400
+O detector usa **EfficientNet-B0** com:
+- Entrada: Imagens 256x256 pixels
+- Saída: 2 classes (IA / REAL)
+- Framework: PyTorch
+- Arquitetura modificada para classificação binária
 
-EXIF suspeito detectado
+## 🛠️ Tecnologias
 
-Limite automático de frames por vídeo
+- **FastAPI**: Framework web moderno e rápido
+- **PyTorch**: Deep Learning
+- **Torchvision**: Transformações de imagem
+- **Pillow**: Processamento de imagens
+- **CORS Middleware**: Integração front-end
 
-Risco de pickle mitigado (usar weights_only=True no futuro)
+## 📝 Licença
 
-⚙️ Requisitos
+Este projeto está sob a licença MIT. Veja o arquivo `LICENSE` para mais detalhes.
 
-Python 3.10+
+## 👤 Autor
 
-PyTorch 2.x
+**Robert Almeida**
 
-CUDA 12+ (opcional)
+- GitHub: [@RobertAlmeida](https://github.com/RobertAlmeida)
+- LinkedIn: [robertrochaalmeida](https://www.linkedin.com/in/robertrochaalmeida/)
 
-OpenCV
+## 🤝 Contribuindo
 
-FastAPI
+Contribuições são bem-vindas! Sinta-se à vontade para:
 
-📦 Roadmap
+1. Fazer um Fork do projeto
+2. Criar uma branch para sua feature (`git checkout -b feature/nova-feature`)
+3. Commit suas mudanças (`git commit -m 'Adiciona nova feature'`)
+4. Push para a branch (`git push origin feature/nova-feature`)
+5. Abrir um Pull Request
 
- Modelo de detecção multimodal (imagem + metadados)
+## ⚠️ Notas Importantes
 
- Dashboard admin
+- O arquivo `ai_detector_model.pth` **não está incluído** no repositório
+- Você precisa treinar ou obter um modelo compatível com a arquitetura EfficientNet-B0
+- Para produção, configure `allow_origins` no CORS com domínios específicos
+- Considere adicionar autenticação para uso em produção
 
- Filtro anti-deepfake para rostos
+## 📊 Exemplo de Uso com cURL
 
- Suporte a vídeos longos (stream processing)
+```bash
+# Testar imagem
+curl -X POST "http://localhost:8000/detect/image" \
+  -H "accept: application/json" \
+  -H "Content-Type: multipart/form-data" \
+  -F "file=@sua_imagem.jpg"
 
- Deploy em Docker/Kubernetes
+# Testar vídeo
+curl -X POST "http://localhost:8000/detect/video" \
+  -H "accept: application/json" \
+  -H "Content-Type: multipart/form-data" \
+  -F "file=@seu_video.mp4"
+```
 
-🧑‍💻 Autor
+## 🐛 Troubleshooting
 
-Robert Almeida
-Sistema de detecção de conteúdo com IA.
+### Erro: "Modelo não encontrado"
+- Verifique se `ai_detector_model.pth` está em `app/models/`
+- Confirme que o caminho está correto
 
-📜 Licença
+### Erro de CORS
+- Verifique se o middleware CORS está configurado antes das rotas
+- Em produção, especifique os domínios permitidos
 
-MIT — livre para uso e modificação.
+### Erro de memória com vídeos grandes
+- Considere processar vídeos em batches menores
+- Aumente a memória disponível ou reduza a resolução dos frames
+
+---
+
+⭐ Se este projeto foi útil, considere dar uma estrela no GitHub!
