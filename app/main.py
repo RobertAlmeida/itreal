@@ -4,11 +4,13 @@ Detecta imagens e vídeos gerados por Inteligência Artificial
 """
 from fastapi import FastAPI, UploadFile, File, Request, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, HTMLResponse, FileResponse
+from fastapi.staticfiles import StaticFiles
 from slowapi import Limiter, _rate_limit_exceeded_handler
 from slowapi.util import get_remote_address
 from slowapi.errors import RateLimitExceeded
 import time
+import os
 from typing import Dict, Any
 
 from app.config import settings
@@ -91,16 +93,27 @@ async def global_exception_handler(request: Request, exc: Exception):
     )
 
 
-@app.get("/", tags=["Health"])
-async def root() -> Dict[str, str]:
+@app.get("/", tags=["Health"], response_class=HTMLResponse)
+async def root():
     """
-    Endpoint raiz - Verifica status da API
+    Endpoint raiz - Serve a interface web
     """
-    return {
-        "status": "running",
-        "app": settings.app_name,
-        "version": settings.app_version
-    }
+    index_path = "index.html"
+    if os.path.exists(index_path):
+        with open(index_path, 'r', encoding='utf-8') as f:
+            return HTMLResponse(content=f.read())
+    else:
+        return HTMLResponse(content="""
+            <html>
+                <body>
+                    <h1>AI Media Detector API</h1>
+                    <p>Status: Running</p>
+                    <p>Version: {}</p>
+                    <p><a href="/docs">API Documentation</a></p>
+                    <p><a href="/health">Health Check</a></p>
+                </body>
+            </html>
+        """.format(settings.app_version))
 
 
 @app.get("/health", tags=["Health"])
